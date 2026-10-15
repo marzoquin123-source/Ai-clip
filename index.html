@@ -1,0 +1,1348 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Timi Clip Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: herramienta de edición — escenario del VOD a la izquierda, vista 9:16 a la derecha, lista de momentos debajo.
+   Paleta inspirada en el cliente de League: oro hextech para la cámara/acciones, cian para el juego. */
+:root {
+  --bg: #edf0f4;
+  --panel: #ffffff;
+  --panel-2: #f5f7fa;
+  --ink: #141a25;
+  --muted: #5a6476;
+  --line: #d4dae3;
+  --gold: #8a6420;
+  --gold-soft: rgba(176, 134, 52, .14);
+  --cyan: #0a7f78;
+  --cyan-soft: rgba(10, 127, 120, .12);
+  --danger: #b0322a;
+  --ok: #2c7a3f;
+  --stage: #0a0e15;
+  --on-gold: #ffffff;
+  --f-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0f17; --panel: #111926; --panel-2: #0e1520; --ink: #e7ebf1; --muted: #8b97aa; --line: #213046;
+    --gold: #c8aa6e; --gold-soft: rgba(200, 170, 110, .14); --cyan: #2fd2c3; --cyan-soft: rgba(47, 210, 195, .12);
+    --danger: #ff6f63; --ok: #5fd07a; --stage: #05080d; --on-gold: #10141c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0f17; --panel: #111926; --panel-2: #0e1520; --ink: #e7ebf1; --muted: #8b97aa; --line: #213046;
+  --gold: #c8aa6e; --gold-soft: rgba(200, 170, 110, .14); --cyan: #2fd2c3; --cyan-soft: rgba(47, 210, 195, .12);
+  --danger: #ff6f63; --ok: #5fd07a; --stage: #05080d; --on-gold: #10141c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-body); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 48px; display: grid; gap: 18px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+button, .btn { font: 600 14px/1 var(--f-body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 9px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+button:hover:not(:disabled), .btn:hover { border-color: var(--gold); }
+button:focus-visible, input:focus-visible, select:focus-visible, .btn:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--gold); color: var(--on-gold); border-color: var(--gold); }
+button.ghost { background: transparent; }
+button.danger { color: var(--danger); }
+button.on { background: var(--gold-soft); border-color: var(--gold); }
+input[type="text"], select { font: 14px var(--f-body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 7px 8px; min-width: 0; }
+input.time { font-family: var(--f-mono); width: 7.2em; }
+label.check { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; color: var(--muted); cursor: pointer; }
+.btn input[type="file"] { display: none; }
+
+/* cabecera */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand h1 { font-size: 30px; text-transform: uppercase; }
+.brand h1 span { color: var(--gold); }
+.brand small { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
+.vodbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.vodname { color: var(--muted); font-size: 13px; max-width: 46ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* zona de trabajo */
+.work { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .work { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.stage { position: relative; background: var(--stage); border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9; width: 100%; max-width: 100%; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.stage.drawing canvas { cursor: crosshair; }
+.drop { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #c9d1dd; padding: 20px;
+  border: 2px dashed rgba(200, 170, 110, .45); border-radius: 6px; }
+.drop.over { background: rgba(200, 170, 110, .08); }
+.drop h2 { font-size: 26px; color: #e9dcc0; text-transform: uppercase; }
+.drop p { margin: 6px 0 14px; color: #9aa6b8; max-width: 46ch; }
+.drop .btn { background: #c8aa6e; color: #10141c; border-color: #c8aa6e; }
+
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.transport input[type="range"] { flex: 1 1 220px; accent-color: var(--gold); min-width: 0; }
+.clock { font-size: 13px; color: var(--muted); }
+.clock b { color: var(--ink); font-weight: 500; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.row .label { font: 600 12px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* vista previa */
+.pv-box { display: grid; place-items: center; }
+#preview { width: 100%; max-width: 270px; aspect-ratio: 9 / 16; border-radius: 8px; background: var(--stage); display: block; }
+.selinfo { font-size: 13px; color: var(--muted); }
+.selinfo b { color: var(--ink); }
+.progress { height: 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s linear; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+.status.err { color: var(--danger); }
+.status.good { color: var(--ok); }
+
+/* pestañas y lista */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; font: 700 18px var(--f-display);
+  letter-spacing: .04em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
+.tabs .count { font: 500 12px var(--f-mono); color: var(--muted); margin-left: 6px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar .spacer { flex: 1; }
+.scanbox { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--gold); background: var(--gold-soft); border-radius: 8px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 14px; }
+th { text-align: left; font: 600 11px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 8px; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tr.sel td { background: var(--gold-soft); }
+tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+td.num { font: 500 13px var(--f-mono); color: var(--muted); width: 2.5em; }
+td.dur { font: 13px var(--f-mono); color: var(--muted); white-space: nowrap; }
+td.dur.warn { color: var(--danger); }
+td input.text { width: 100%; }
+td .acts { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+td select { max-width: 13em; }
+td input.text { min-width: 10em; }
+td .acts button { padding: 7px 9px; }
+.pill { display: inline-block; font: 600 11px var(--f-body); letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; }
+.pill.done { background: var(--cyan-soft); color: var(--cyan); }
+.pill.fill { background: var(--gold-soft); color: var(--gold); }
+.empty { padding: 26px; text-align: center; color: var(--muted); }
+.source { font-size: 13px; color: var(--muted); margin: 0; }
+
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+.card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; min-width: 0; }
+.card video { width: 100%; aspect-ratio: 9 / 16; background: var(--stage); display: block; max-width: 100%; }
+.card .meta { padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+.card .name { font: 500 12px var(--f-mono); overflow-wrap: anywhere; }
+.card .sub { font-size: 12px; color: var(--muted); }
+.confirm { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--danger); }
+@media (max-width: 560px) { .brand h1 { font-size: 24px; } .wrap { padding-inline: 16px; } }
+@media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
+
+/* ---------- Sección Clips Timi: neo brutalismo oscuro (mundo propio, un solo tema a propósito) ---------- */
+.ct {
+  --ct-bg: #0E0E10; --ct-card: #19191C; --ct-ink: #F4F1EA; --ct-muted: #BDB8AE;
+  --ct-yellow: #FFD60A; --ct-violet: #8B5CF6; --ct-violet-ink: #C4B1FF; --ct-black: #000000;
+  color-scheme: dark;
+  background: var(--ct-bg); color: var(--ct-ink);
+  border: 3px solid var(--ct-ink); box-shadow: 8px 8px 0 var(--ct-violet);
+  padding: clamp(20px, 4vw, 44px); margin-right: 8px; margin-bottom: 8px;
+  display: grid; gap: clamp(28px, 4vw, 44px); min-width: 0; scroll-margin-top: 16px;
+}
+.ct h2, .ct h3 { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .02em; color: var(--ct-ink); }
+.ct h3 { font-size: clamp(24px, 3vw, 32px); display: flex; align-items: center; gap: 12px; }
+.ct h3::after { content: ""; flex: 1; height: 3px; background: var(--ct-ink); }
+.ct p { margin: 0; }
+.ct-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 44px); align-items: center; }
+@media (max-width: 860px) { .ct-hero { grid-template-columns: 1fr; } }
+.ct-hero-text { display: grid; gap: 14px; min-width: 0; }
+.ct-eyebrow { font: 600 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ct-violet-ink); }
+.ct-hero h2 { font-size: clamp(48px, 8vw, 92px); line-height: .9; }
+.ct-hero h2 span { color: var(--ct-bg); background: var(--ct-yellow); padding: 0 .12em; border: 3px solid var(--ct-ink); box-shadow: 5px 5px 0 var(--ct-violet); display: inline-block; transform: rotate(-2deg); }
+.ct-slogan { font: 700 clamp(20px, 2.4vw, 26px)/1.2 var(--f-display); color: var(--ct-yellow); text-transform: uppercase; letter-spacing: .02em; }
+.ct-lead { color: var(--ct-ink); max-width: 56ch; font-size: 16px; }
+.ct-lead strong { color: var(--ct-yellow); font-weight: 600; }
+.ct-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 6px; }
+.ct-btn { display: inline-flex; align-items: center; gap: 8px; font: 700 18px var(--f-display); letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ct-black); background: var(--ct-yellow); border: 3px solid var(--ct-ink); padding: 12px 18px; text-decoration: none;
+  box-shadow: 5px 5px 0 var(--ct-violet); transition: transform .08s ease, box-shadow .08s ease; }
+.ct-btn:hover { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ct-violet); }
+.ct-btn:active { transform: translate(5px, 5px); box-shadow: 0 0 0 var(--ct-violet); }
+.ct-btn:focus-visible { outline: 3px solid var(--ct-violet-ink); outline-offset: 4px; }
+.ct-tag { font: 500 13px var(--f-mono); color: var(--ct-muted); }
+
+.ct-shot { position: relative; margin: 0; border: 3px solid var(--ct-ink); box-shadow: 8px 8px 0 var(--ct-yellow); background:
+  repeating-linear-gradient(-45deg, #19191C 0 14px, #141417 14px 28px); aspect-ratio: 16 / 10; max-width: 100%; overflow: hidden; min-width: 0; }
+.ct-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ct-shot figcaption { position: absolute; left: 0; bottom: 0; font: 600 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+  background: var(--ct-ink); color: var(--ct-bg); padding: 6px 10px; }
+.ct-missing { position: absolute; inset: 0; display: none; place-content: center; text-align: center; gap: 8px; padding: 20px; color: var(--ct-ink); }
+.ct-missing b { font: 700 22px var(--f-display); text-transform: uppercase; letter-spacing: .03em; }
+.ct-missing code { font: 12px var(--f-mono); color: var(--ct-yellow); overflow-wrap: anywhere; }
+.ct-shot.is-missing img { display: none; }
+.ct-shot.is-missing .ct-missing { display: grid; }
+
+.ct-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border: 3px solid var(--ct-ink); }
+@media (max-width: 960px) { .ct-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ct-stats > div:last-child { grid-column: 1 / -1; } }
+.ct-stats > div { padding: 16px 18px; display: grid; gap: 4px; align-content: start; border-right: 3px solid var(--ct-ink); min-width: 0; }
+.ct-stats > div:last-child { border-right: 0; }
+@media (max-width: 960px) {
+  .ct-stats > div { border-right: 0; border-bottom: 3px solid var(--ct-ink); }
+  .ct-stats > div:nth-child(odd):not(:last-child) { border-right: 3px solid var(--ct-ink); }
+  .ct-stats > div:last-child { border-bottom: 0; }
+}
+.ct-stats dt { font: 700 clamp(26px, 3vw, 34px)/1 var(--f-display); color: var(--ct-yellow); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .ct-stats dt { font-size: 24px; } .ct-stats > div { padding: 14px; } }
+.ct-stats dd { margin: 0; font-size: 14px; color: var(--ct-muted); }
+
+.ct-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+@media (max-width: 760px) { .ct-steps { grid-template-columns: 1fr; } }
+.ct-steps li { background: var(--ct-card); border: 2px solid var(--ct-ink); box-shadow: 5px 5px 0 var(--ct-violet); padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ct-num { font: 700 44px/1 var(--f-display); color: var(--ct-yellow); }
+.ct-steps b { font: 700 22px var(--f-display); text-transform: uppercase; letter-spacing: .02em; }
+.ct-steps p { color: var(--ct-muted); }
+
+.ct-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 22px; }
+@media (min-width: 1000px) {
+  .ct-features { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .ct-card { grid-column: span 2; }
+  .ct-card:nth-child(n+4) { grid-column: span 3; }
+}
+.ct-card { background: var(--ct-card); border: 2px solid var(--ct-ink); box-shadow: 5px 5px 0 var(--ct-yellow); padding: 18px 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.ct-card:nth-child(even) { box-shadow: 5px 5px 0 var(--ct-violet); }
+.ct-card h4 { margin: 0; font: 700 22px var(--f-display); text-transform: uppercase; letter-spacing: .02em; display: flex; align-items: center; gap: 10px; }
+.ct-ico { display: inline-grid; place-items: center; width: 38px; height: 38px; flex: none; font-size: 20px; background: var(--ct-bg); border: 2px solid var(--ct-ink); }
+.ct-card ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ct-ink); }
+.ct-card li::marker { color: var(--ct-yellow); }
+.ct-card .ct-note { font: 500 12px var(--f-mono); color: var(--ct-violet-ink); }
+
+.ct-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 44px); align-items: center; }
+@media (max-width: 860px) { .ct-split { grid-template-columns: 1fr; } }
+.ct-split .ct-shot { box-shadow: 8px 8px 0 var(--ct-violet); }
+.ct-split-text { display: grid; gap: 12px; min-width: 0; }
+.ct-split-text p { color: var(--ct-muted); max-width: 52ch; }
+.ct-split-text b { color: var(--ct-ink); }
+
+.ct-tech { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px 28px; border-top: 3px solid var(--ct-ink); padding-top: 22px; }
+.ct-tech h4 { margin: 0 0 10px; font: 600 12px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ct-muted); }
+.ct-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.ct-chips li { font: 500 13px var(--f-mono); padding: 5px 10px; border: 2px solid var(--ct-ink); background: var(--ct-card); }
+.ct-chips li.opt { border-style: dashed; color: var(--ct-muted); }
+.ct-by { font: 500 13px var(--f-mono); color: var(--ct-muted); }
+.ct-by b { color: var(--ct-yellow); font-weight: 500; }
+@media (max-width: 560px) { .ct { box-shadow: 5px 5px 0 var(--ct-violet); margin-right: 5px; } }
+@media (prefers-reduced-motion: reduce) { .ct-btn { transition: none; } .ct-btn:hover, .ct-btn:active { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top" id="top">
+    <div class="brand">
+      <h1>Timi <span>Clip</span> Studio</h1>
+      <small>@simplemente_timi</small>
+    </div>
+    <div class="vodbar">
+      <span class="vodname" id="vodName">Ningún VOD cargado</span>
+      <span class="clock mono" id="vodMeta"></span>
+      <label class="btn" for="vodFile">Abrir VOD<input type="file" id="vodFile" accept="video/*"></label>
+    </div>
+  </header>
+
+  <main class="work">
+    <section class="panel" aria-label="VOD">
+      <div class="stage" id="stage">
+        <video id="vod" playsinline preload="auto"></video>
+        <canvas id="overlay"></canvas>
+        <div class="drop" id="drop">
+          <div>
+            <h2>Arrastra tu VOD aquí</h2>
+            <p>El video se procesa en tu navegador. No se sube a ningún lado, así que sirve aunque pese varios GB.</p>
+            <label class="btn" for="vodFile2">Elegir archivo<input type="file" id="vodFile2" accept="video/*"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button id="playBtn" disabled aria-label="Reproducir">▶</button>
+        <span class="clock mono" id="clock"><b>0:00:00</b> / 0:00:00</span>
+        <input type="range" id="scrub" min="0" max="1" step="0.1" value="0" disabled aria-label="Posición en el VOD">
+        <button id="markIn" disabled title="Tecla I">Marcar inicio</button>
+        <button id="markOut" disabled title="Tecla O">Marcar fin</button>
+        <span class="hint">Espacio: reproducir · I / O: inicio y fin</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Layout</span>
+        <select id="layoutSel" aria-label="Layout que estás editando"></select>
+        <button id="drawCam" disabled title="Dibuja el marco de nuevo desde cero">Redibujar cámara</button>
+        <button id="drawGame" disabled title="Dibuja el marco de nuevo desde cero">Redibujar juego</button>
+        <button id="dupLayout" class="ghost">Duplicar</button>
+        <span id="allBox"><button id="allLayout" class="ghost">Usar en todos</button></span>
+        <input type="text" id="layoutName" aria-label="Nombre del layout" style="flex:1 1 160px">
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div class="legend">
+          <span><i class="sw" style="background:#c8aa6e"></i>Cámara → arriba (1080×800)</span>
+          <span><i class="sw" style="background:#2fd2c3"></i>Juego → abajo (1080×1120)</span>
+        </div>
+        <p class="hint" id="drawHint">Arrastra un marco para moverlo y sus cuadritos para cambiar el tamaño (Shift en una esquina mantiene la proporción).</p>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="Vista previa">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="font-size:20px;text-transform:uppercase">Vista 9:16</h3>
+        <span class="mono clock" id="pvLabel">1080×1920</span>
+      </div>
+      <div class="pv-box"><canvas id="preview" width="540" height="960"></canvas></div>
+      <p class="selinfo" id="selInfo">Elige un momento de la lista para verlo aquí.</p>
+      <div class="row">
+        <button class="primary" id="exportOne" disabled>Exportar este clip</button>
+        <button id="watchSel" disabled>▶ Ver momento</button>
+        <button id="cancelExport" class="danger" hidden>Cancelar</button>
+      </div>
+      <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+      <p class="status" id="status" role="status"></p>
+      <div style="display:grid;gap:8px">
+        <label class="check"><input type="checkbox" id="wmOn"> Marca de agua</label>
+        <input type="text" id="wmText" aria-label="Texto de la marca de agua">
+        <label class="check"><input type="checkbox" id="listenOn"> Escuchar mientras exporta</label>
+      </div>
+      <p class="hint">Exportar graba en tiempo real: un clip de 40 s tarda unos 40 s. Deja esta pestaña visible mientras graba.</p>
+    </aside>
+  </main>
+
+  <section class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabMoments" aria-selected="true" aria-controls="momentsView">Momentos<span class="count" id="mCount"></span></button>
+      <button role="tab" id="tabGallery" aria-selected="false" aria-controls="galleryView">Galería<span class="count" id="gCount"></span></button>
+    </div>
+
+    <div id="momentsView" role="tabpanel" aria-labelledby="tabMoments" style="display:grid;gap:12px">
+      <div class="toolbar">
+        <button id="scanBtn" disabled>Buscar momentos por audio</button>
+        <button id="addBtn">Nuevo momento</button>
+        <label class="btn" for="csvIn">Importar CSV<input type="file" id="csvIn" accept=".csv,text/csv"></label>
+        <button id="csvOut">Exportar CSV</button>
+        <span class="spacer"></span>
+        <span id="clearBox"><button id="clearBtn" class="ghost danger">Vaciar lista</button></span>
+        <button class="primary" id="exportAll" disabled>Exportar todos</button>
+      </div>
+      <div class="scanbox" id="scanBox" hidden>
+        <div class="row" style="justify-content:space-between">
+          <b id="scanTitle">Escuchando el VOD a 4×…</b>
+          <button id="scanCancel" class="ghost">Cancelar</button>
+        </div>
+        <div class="progress"><i id="scanBar"></i></div>
+        <p class="hint" id="scanHint">El audio se analiza reproduciendo el VOD rápido y en silencio: un stream de 43 min tarda unos 11 min. Mantén la pestaña visible.</p>
+        <div class="row" id="scanResult" hidden>
+          <button class="primary" id="scanReplace">Reemplazar la lista</button>
+          <button id="scanAppend">Agregar a la lista</button>
+          <button id="scanDiscard" class="ghost">Descartar</button>
+        </div>
+      </div>
+      <p class="source" id="sourceNote"></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Inicio</th><th>Fin</th><th>Dura</th><th>Texto (también nombra el archivo)</th><th>Layout</th><th>Gameplay de relleno</th><th></th>
+          </tr></thead>
+          <tbody id="mBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">Gameplay de relleno: si en ese momento no estabas jugando (OBS, selección de campeón), pon un tiempo de otra parte del VOD. Abajo sale ese gameplay sin sonido y arriba tu cámara y tu voz del momento.</p>
+    </div>
+
+    <div id="galleryView" role="tabpanel" aria-labelledby="tabGallery" hidden style="display:grid;gap:12px">
+      <div class="toolbar">
+        <label class="btn" for="galIn">Abrir clips de tu PC<input type="file" id="galIn" accept="video/*" multiple></label>
+        <p class="hint">Los clips que exportes aquí aparecen solos. También puedes abrir los de tu carpeta clips para revisarlos.</p>
+      </div>
+      <div class="gallery" id="gal"></div>
+    </div>
+  </section>
+
+  <section class="ct" id="clips-timi" aria-labelledby="ct-title">
+    <div class="ct-hero">
+      <div class="ct-hero-text">
+        <p class="ct-eyebrow">App de escritorio para Windows · hecha por simplemente_timi</p>
+        <h2 id="ct-title">Clips <span>Timi</span></h2>
+        <p class="ct-slogan">Saca los mejores momentos de tus streams para TikTok.</p>
+        <p class="ct-lead">Convierte los VODs de tus streams de <strong>Twitch y Kick</strong> en clips verticales listos para subir. Eliges el video, das clic a un botón y te entrega los mejores momentos con tu cámara arriba, el juego abajo y tu marca de agua.</p>
+        <div class="ct-actions">
+          <a class="ct-btn" href="#top">Probar la versión web <span aria-hidden="true">↑</span></a>
+          <span class="ct-tag">De VOD a TikTok en un clic.</span>
+        </div>
+      </div>
+      <figure class="ct-shot">
+        <img src="img/clips-timi-app.png" width="1280" height="800" loading="lazy"
+          alt="Pantalla principal de Clips Timi: pasos numerados para elegir el VOD y el modo, barra de progreso y lista de clips generados, en estilo oscuro con amarillo y violeta">
+        <div class="ct-missing" aria-hidden="true"><b>Pantalla principal</b><code>img/clips-timi-app.png</code></div>
+        <figcaption>Pantalla principal</figcaption>
+      </figure>
+    </div>
+
+    <dl class="ct-stats" aria-label="Datos rápidos">
+      <div><dt>1080×1920</dt><dd>Formato vertical 9:16</dd></div>
+      <div><dt>30 s – 1:30</dt><dd>Duración de cada clip</dd></div>
+      <div><dt>20</dt><dd>Clips por VOD, como máximo</dd></div>
+      <div><dt>Twitch + Kick</dt><dd>→ TikTok, Reels y Shorts</dd></div>
+      <div><dt>5</dt><dd>Logos incluidos para la marca de agua</dd></div>
+    </dl>
+
+    <div style="display:grid;gap:20px">
+      <h3>Cómo funciona</h3>
+      <ol class="ct-steps">
+        <li><span class="ct-num" aria-hidden="true">01</span><b>Elige tu VOD</b><p>Sirve con mp4, mkv, mov y los formatos que exportan Twitch y Kick.</p></li>
+        <li><span class="ct-num" aria-hidden="true">02</span><b>Escoge el modo</b><p>Automático: la app encuentra los momentos. Manual: tú pones los tiempos.</p></li>
+        <li><span class="ct-num" aria-hidden="true">03</span><b>Dale a “Hacer clips”</b><p>En minutos tienes tus clips verticales con marca de agua, listos para subir.</p></li>
+      </ol>
+    </div>
+
+    <div style="display:grid;gap:20px">
+      <h3>Características</h3>
+      <div class="ct-features">
+        <article class="ct-card">
+          <h4><span class="ct-ico" aria-hidden="true">⚡</span>Modo automático</h4>
+          <ul>
+            <li>Detecta los momentos con más hype analizando el volumen del audio: gritos, risas y reacciones.</li>
+            <li>Tú eliges cuántos clips quieres, de 1 a 20.</li>
+            <li>Clips de 30 s a 1:30 que terminan unos 7 s después de que baja el volumen.</li>
+            <li>Texto automático opcional con IA (Whisper).</li>
+          </ul>
+        </article>
+        <article class="ct-card">
+          <h4><span class="ct-ico" aria-hidden="true">✂</span>Modo manual</h4>
+          <ul>
+            <li>Inicio y final del clip con hora, minuto y segundo por separado.</li>
+            <li>Texto opcional en el clip.</li>
+            <li>Te avisa si los tiempos no tienen sentido, como un final antes del inicio.</li>
+          </ul>
+        </article>
+        <article class="ct-card">
+          <h4><span class="ct-ico" aria-hidden="true">📱</span>Formato TikTok</h4>
+          <ul>
+            <li>Vertical 1080×1920 con la cámara arriba y el juego abajo.</li>
+            <li>Marcas tu cámara una sola vez dibujando un rectángulo y la app lo recuerda.</li>
+          </ul>
+        </article>
+        <article class="ct-card">
+          <h4><span class="ct-ico" aria-hidden="true">💧</span>Marca de agua a tu gusto</h4>
+          <ul>
+            <li>Logos de Twitch, Kick, YouTube, TikTok e Instagram, o cualquier logo tuyo (se recorta en círculo solo).</li>
+            <li>Activa, ordena o quita logos y pon el usuario que quieras.</li>
+            <li>Opacidad de 10 a 100 % y tamaño de 10 a 150 px, con valores recomendados.</li>
+            <li>Vista previa en vivo; se sube sola para no tapar el texto y se guarda automáticamente.</li>
+          </ul>
+        </article>
+        <article class="ct-card">
+          <h4><span class="ct-ico" aria-hidden="true">🎛</span>Interfaz</h4>
+          <ul>
+            <li>Estilo neo brutalista oscuro con amarillo y violeta.</li>
+            <li>Pasos numerados y barra de progreso.</li>
+            <li>Lista de clips: doble clic para verlos.</li>
+            <li>Botón de cancelar y registro de errores.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+
+    <div class="ct-split">
+      <figure class="ct-shot">
+        <img src="img/clips-timi-marca.png" width="1280" height="800" loading="lazy"
+          alt="Editor de marca de agua de Clips Timi: lista de logos de Twitch, Kick, YouTube, TikTok e Instagram con controles de opacidad y tamaño, y vista previa en vivo del clip vertical">
+        <div class="ct-missing" aria-hidden="true"><b>Editor de marca de agua</b><code>img/clips-timi-marca.png</code></div>
+        <figcaption>Editor de marca de agua</figcaption>
+      </figure>
+      <div class="ct-split-text">
+        <h3>Tu marca en cada clip</h3>
+        <p>Arma tu marca de agua con tus redes y tu usuario, mírala en vivo sobre el clip y <b>la app la recuerda</b> para el siguiente stream. Si el clip lleva texto, la marca se sube sola para no taparlo.</p>
+        <p class="ct-by">Tú streameas, <b>Clips Timi</b> corta.</p>
+      </div>
+    </div>
+
+    <div class="ct-tech">
+      <div>
+        <h4>Requisitos</h4>
+        <ul class="ct-chips">
+          <li>Windows 10 / 11</li><li>Python 3</li><li>FFmpeg</li><li class="opt">Whisper (opcional)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Tecnologías</h4>
+        <ul class="ct-chips">
+          <li>Python</li><li>Tkinter</li><li>FFmpeg</li><li>NumPy</li><li>Pillow</li><li>OpenCV</li><li>Whisper</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<video id="filler" muted playsinline preload="auto" hidden></video>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const vod = $('#vod'), fv = $('#filler'), ov = $('#overlay'), pv = $('#preview'), stage = $('#stage');
+  const pctx = pv.getContext('2d');
+  const OUT_W = 1080, OUT_H = 1920, TOP_H = 800;
+  const KEY = 'timiClipStudio.v1';
+
+  // ---------- estado ----------
+  function defaults() {
+    const L = 'b', A = 'a';
+    const m = (start, end, text = '', layout = L, filler = null, fillerLayout = L, done = true) =>
+      ({ id: uid(), start, end, text, layout, filler, fillerLayout, done });
+    return {
+      source: 'Momentos del VOD 2890300969 (Escritorio\\Vods, 2 oct). Si abres otro VOD, vacía la lista o busca momentos nuevos.',
+      vodFile: '2890300969-1483788883-c459f1ac-efe6-4060-8330-8eb99327e925.mp4',
+      layouts: [
+        { id: 'b', name: 'Cámara chica (abajo izq.)', ref: [1280, 720], cam: [2, 537, 326, 182], game: [332, 0, 694, 720] },
+        { id: 'a', name: 'Cámara grande (abajo izq.)', ref: [1280, 720], cam: [2, 498, 394, 220], game: [400, 0, 694, 720] },
+        { id: 'v', name: 'Layout viejo (cámara arriba izq.)', ref: [1280, 720], cam: [64, 2, 240, 132], game: [308, 0, 660, 720] },
+      ],
+      moments: [
+        m(856, 887), m(1000, 1030), m(1088, 1134), m(1186, 1216), m(1253, 1283),
+        m(1326, 1372), m(1454, 1484), m(1611, 1641), m(2288, 2320), m(2526, 2573),
+        m(121, 154, '', A, 1732), m(405, 436, '', A, 2067), m(25, 61, 'DEJE DE GEMIR RAW', A, 1950),
+      ],
+      settings: { layoutId: 'b', wm: true, wmText: '@simplemente_timi', listen: false },
+    };
+  }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function load() {
+    try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.layouts && s.moments) return s; } catch (e) {}
+    return null;
+  }
+  let state = load() || defaults();
+  if (state.vodFile === undefined && /^Momentos del VOD 2890300969/.test(state.source || ''))
+    state.vodFile = '2890300969-1483788883-c459f1ac-efe6-4060-8330-8eb99327e925.mp4';
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  let selId = null, drawMode = null, drag = null, busy = false, watching = false;
+  let cancelFlag = false, scanResult = null;
+  const exported = []; // {name, blob, url, dur}
+  const opened = [];
+
+  // ---------- utilidades ----------
+  const pad = n => String(n).padStart(2, '0');
+  function fmt(sec) {
+    if (sec == null || isNaN(sec)) return '';
+    sec = Math.max(0, Math.round(sec));
+    return `${Math.floor(sec / 3600)}:${pad(Math.floor(sec % 3600 / 60))}:${pad(sec % 60)}`;
+  }
+  function parseTime(s) {
+    s = String(s ?? '').trim().replace(',', '.');
+    if (!s) return null;
+    const parts = s.split(':').map(Number);
+    if (parts.length > 3 || parts.some(isNaN)) return NaN;
+    return parts.reduce((t, p) => t * 60 + p, 0);
+  }
+  function safeName(text) {
+    let t = (text || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toUpperCase();
+    t = t.replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40).replace(/_+$/, '');
+    return t || 'CLIP';
+  }
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const layoutById = id => state.layouts.find(l => l.id === id) || state.layouts[0];
+  const sel = () => state.moments.find(m => m.id === selId) || null;
+  function setStatus(msg, kind = '') { const el = $('#status'); el.textContent = msg; el.className = 'status' + (kind ? ' ' + kind : ''); }
+  const hasVod = () => vod.readyState >= 1 && vod.videoWidth > 0;
+  function scaleRect(r, ref, vw, vh) { const sx = vw / ref[0], sy = vh / ref[1]; return [r[0] * sx, r[1] * sy, r[2] * sx, r[3] * sy]; }
+  function seek(v, t) {
+    return new Promise(res => {
+      const done = () => { v.removeEventListener('seeked', done); res(); };
+      v.addEventListener('seeked', done);
+      v.currentTime = Math.max(0, t);
+    });
+  }
+
+  // ---------- audio ----------
+  let ac = null, monitor = null, recDest = null, analyser = null;
+  function ensureAudio() {
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ac = new AC();
+      const src = ac.createMediaElementSource(vod);
+      monitor = ac.createGain();
+      recDest = ac.createMediaStreamDestination();
+      analyser = ac.createAnalyser(); analyser.fftSize = 2048;
+      src.connect(monitor).connect(ac.destination);
+      src.connect(recDest);
+      src.connect(analyser);
+    }
+    if (ac.state === 'suspended') ac.resume();
+  }
+
+  // ---------- dibujo del clip ----------
+  function fillDraw(x, v, r, dx, dy, dw, dh) {
+    if (!v || v.readyState < 2) { x.fillStyle = '#05080d'; x.fillRect(dx, dy, dw, dh); return; }
+    const s = Math.max(dw / r[2], dh / r[3]);
+    const cw = dw / s, ch = dh / s;
+    const sx = r[0] + (r[2] - cw) / 2, sy = r[1] + (r[3] - ch) / 2;
+    x.drawImage(v, sx, sy, cw, ch, dx, dy, dw, dh);
+  }
+  function wrap(text, width) {
+    const words = text.split(/\s+/).filter(Boolean), lines = [];
+    let cur = '';
+    for (let w of words) {
+      while (w.length > width) { if (cur) { lines.push(cur); cur = ''; } lines.push(w.slice(0, width)); w = w.slice(width); }
+      if (!cur) cur = w; else if ((cur + ' ' + w).length <= width) cur += ' ' + w; else { lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function roundRect(x, X, Y, W, H, r) {
+    x.beginPath();
+    x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r);
+    x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath();
+  }
+  function drawCaption(x, W, seam, text, s) {
+    text = (text || '').trim().toUpperCase();
+    if (!text) return 0;
+    const lines = wrap(text, 22);
+    const fs = 64 * s, lh = fs * 1.16, px = 28 * s, py = 18 * s;
+    x.font = `700 ${fs}px Arial, "Helvetica Neue", Helvetica, sans-serif`;
+    const tw = Math.max(...lines.map(l => x.measureText(l).width));
+    const bw = Math.min(W - 40 * s, tw + 2 * px), bh = lh * lines.length + 2 * py;
+    const bx = (W - bw) / 2, by = seam - bh / 2;
+    x.fillStyle = '#ffffff'; roundRect(x, bx, by, bw, bh, 16 * s); x.fill();
+    x.fillStyle = '#000000'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    lines.forEach((l, i) => x.fillText(l, W / 2, by + py + lh * (i + 0.5), bw - px));
+    return bh / 2;
+  }
+  function drawWatermark(x, W, seam, half, s) {
+    if (!state.settings.wm || !state.settings.wmText.trim()) return;
+    x.save();
+    x.font = `600 ${34 * s}px Barlow, Arial, sans-serif`;
+    x.textAlign = 'right'; x.textBaseline = 'middle';
+    x.shadowColor = 'rgba(0,0,0,.65)'; x.shadowBlur = 8 * s;
+    x.fillStyle = 'rgba(255,255,255,.85)';
+    x.fillText(state.settings.wmText.trim(), W - 32 * s, seam + Math.max(half, 0) + 52 * s);
+    x.restore();
+  }
+  function compose(x, W, H, m, useFiller) {
+    const s = W / OUT_W, seam = Math.round(H * TOP_H / OUT_H);
+    const L = layoutById(m.layout);
+    if (!hasVod()) return placeholder(x, W, H, m);
+    const vw = vod.videoWidth, vh = vod.videoHeight;
+    fillDraw(x, vod, scaleRect(L.cam, L.ref, vw, vh), 0, 0, W, seam);
+    if (useFiller) {
+      const F = layoutById(m.fillerLayout || m.layout);
+      fillDraw(x, fv, scaleRect(F.game, F.ref, vw, vh), 0, seam, W, H - seam);
+    } else {
+      fillDraw(x, vod, scaleRect(L.game, L.ref, vw, vh), 0, seam, W, H - seam);
+    }
+    const half = drawCaption(x, W, seam, m.text, s);
+    drawWatermark(x, W, seam, half, s);
+  }
+  function placeholder(x, W, H, m) {
+    const s = W / OUT_W, seam = Math.round(H * TOP_H / OUT_H);
+    x.fillStyle = '#1a1710'; x.fillRect(0, 0, W, seam);
+    x.fillStyle = '#0c1a1c'; x.fillRect(0, seam, W, H - seam);
+    x.font = `700 ${70 * s}px "Barlow Condensed", Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = 'rgba(200,170,110,.55)'; x.fillText('TU CÁMARA', W / 2, seam / 2);
+    x.fillStyle = 'rgba(47,210,195,.5)'; x.fillText('GAMEPLAY', W / 2, seam + (H - seam) / 2);
+    const half = drawCaption(x, W, seam, m.text || 'NO PUEDE SER', s);
+    drawWatermark(x, W, seam, half, s);
+  }
+
+  // ---------- overlay del escenario ----------
+  function sizeOverlay() {
+    const r = stage.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    ov.width = Math.round(r.width * d); ov.height = Math.round(r.height * d);
+  }
+  function drawOverlay() {
+    const x = ov.getContext('2d');
+    x.clearRect(0, 0, ov.width, ov.height);
+    if (!hasVod()) return;
+    const L = layoutById(state.settings.layoutId), vw = vod.videoWidth, vh = vod.videoHeight;
+    const kx = ov.width / vw, ky = ov.height / vh, d = window.devicePixelRatio || 1;
+    const box = (r, color, fill, label) => {
+      const [X, Y, W, H] = [r[0] * kx, r[1] * ky, r[2] * kx, r[3] * ky];
+      x.fillStyle = fill; x.fillRect(X, Y, W, H);
+      x.strokeStyle = color; x.lineWidth = 2 * d; x.strokeRect(X + d, Y + d, W - 2 * d, H - 2 * d);
+      x.font = `700 ${13 * d}px Barlow, Arial, sans-serif`; x.textBaseline = 'top'; x.textAlign = 'left';
+      const tw = x.measureText(label).width + 10 * d;
+      x.fillStyle = color; x.fillRect(X + 2 * d, Y + 2 * d, tw, 18 * d);
+      x.fillStyle = '#0a0e15'; x.fillText(label, X + 7 * d, Y + 5 * d);
+    };
+    const handles = (r, color, active) => {
+      const hp = handlePts(r), hs = (active ? 10 : 8) * d;
+      for (const k of HANDLES) {
+        const X = hp[k][0] * kx, Y = hp[k][1] * ky;
+        x.fillStyle = '#ffffff'; x.fillRect(X - hs / 2, Y - hs / 2, hs, hs);
+        x.strokeStyle = color; x.lineWidth = 1.5 * d; x.strokeRect(X - hs / 2, Y - hs / 2, hs, hs);
+      }
+    };
+    const gR = scaleRect(L.game, L.ref, vw, vh), cR = scaleRect(L.cam, L.ref, vw, vh);
+    if (drawMode !== 'game') box(gR, '#2fd2c3', 'rgba(47,210,195,.08)', 'JUEGO');
+    if (drawMode !== 'cam') box(cR, '#c8aa6e', 'rgba(200,170,110,.12)', 'CÁMARA');
+    if (!drawMode) {
+      handles(gR, '#2fd2c3', (edit && edit.kind === 'game') || (hover && hover.kind === 'game'));
+      handles(cR, '#c8aa6e', (edit && edit.kind === 'cam') || (hover && hover.kind === 'cam'));
+    }
+    if (drag && drag.rect) {
+      const r = drag.rect;
+      x.setLineDash([6 * d, 4 * d]); x.strokeStyle = drawMode === 'cam' ? '#c8aa6e' : '#2fd2c3'; x.lineWidth = 2 * d;
+      x.strokeRect(r[0] * kx, r[1] * ky, r[2] * kx, r[3] * ky); x.setLineDash([]);
+    }
+  }
+  function toVideoPx(e) {
+    const r = ov.getBoundingClientRect();
+    return [Math.min(Math.max(0, (e.clientX - r.left) / r.width), 1) * vod.videoWidth,
+            Math.min(Math.max(0, (e.clientY - r.top) / r.height), 1) * vod.videoHeight];
+  }
+  // --- mover y redimensionar los marcos (como una imagen en Word) ---
+  const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+  const CURSORS = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize',
+    n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', move: 'move' };
+  let edit = null, hover = null;
+  const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+  function handlePts(r) {
+    const [x, y, w, h] = r;
+    return { nw: [x, y], n: [x + w / 2, y], ne: [x + w, y], e: [x + w, y + h / 2],
+      se: [x + w, y + h], s: [x + w / 2, y + h], sw: [x, y + h], w: [x, y + h / 2] };
+  }
+  function hitTest(p) {
+    const L = layoutById(state.settings.layoutId), vw = vod.videoWidth, vh = vod.videoHeight;
+    const rects = [['cam', scaleRect(L.cam, L.ref, vw, vh)], ['game', scaleRect(L.game, L.ref, vw, vh)]];
+    const tol = 10 * vw / ov.getBoundingClientRect().width;
+    for (const [kind, r] of rects) {
+      const hp = handlePts(r);
+      for (const k of HANDLES) if (Math.abs(p[0] - hp[k][0]) <= tol && Math.abs(p[1] - hp[k][1]) <= tol) return { kind, mode: k };
+    }
+    for (const [kind, r] of rects)
+      if (p[0] >= r[0] && p[0] <= r[0] + r[2] && p[1] >= r[1] && p[1] <= r[1] + r[3]) return { kind, mode: 'move' };
+    return null;
+  }
+  ov.addEventListener('pointerdown', e => {
+    if (!hasVod() || busy) return;
+    ov.setPointerCapture(e.pointerId);
+    if (drawMode) { drag = { p0: toVideoPx(e), rect: null }; return; }
+    const p = toVideoPx(e), h = hitTest(p);
+    if (!h) { edit = { click: true, p0: p }; return; }
+    const L = layoutById(state.settings.layoutId), vw = vod.videoWidth, vh = vod.videoHeight;
+    L.cam = scaleRect(L.cam, L.ref, vw, vh); L.game = scaleRect(L.game, L.ref, vw, vh); L.ref = [vw, vh];
+    edit = { ...h, p0: p, r0: [...L[h.kind]], moved: false };
+  });
+  ov.addEventListener('pointermove', e => {
+    if (!hasVod()) return;
+    const p = toVideoPx(e);
+    if (drag) {
+      const [x0, y0] = drag.p0;
+      drag.rect = [Math.min(x0, p[0]), Math.min(y0, p[1]), Math.abs(p[0] - x0), Math.abs(p[1] - y0)];
+      return;
+    }
+    if (!edit) {
+      hover = drawMode ? null : hitTest(p);
+      ov.style.cursor = drawMode ? 'crosshair' : (hover ? CURSORS[hover.mode] : 'pointer');
+      return;
+    }
+    if (edit.click) return;
+    const vw = vod.videoWidth, vh = vod.videoHeight, MIN = 24;
+    const dx = p[0] - edit.p0[0], dy = p[1] - edit.p0[1];
+    if (Math.hypot(dx, dy) > 3) edit.moved = true;
+    let [x, y, w, h] = edit.r0;
+    if (edit.mode === 'move') {
+      x = clamp(x + dx, 0, vw - w); y = clamp(y + dy, 0, vh - h);
+    } else {
+      const m = edit.mode;
+      let x1 = x, y1 = y, x2 = x + w, y2 = y + h;
+      if (m.includes('w')) x1 = clamp(x + dx, 0, x2 - MIN);
+      if (m.includes('e')) x2 = clamp(x + w + dx, x1 + MIN, vw);
+      if (m.includes('n')) y1 = clamp(y + dy, 0, y2 - MIN);
+      if (m.includes('s')) y2 = clamp(y + h + dy, y1 + MIN, vh);
+      if (e.shiftKey && m.length === 2) { // esquina + Shift: mantiene la proporción
+        const ar = w / h; let nw = x2 - x1, nh = y2 - y1;
+        if (nw / nh > ar) nw = nh * ar; else nh = nw / ar;
+        if (m.includes('w')) x1 = x2 - nw; else x2 = x1 + nw;
+        if (m.includes('n')) y1 = y2 - nh; else y2 = y1 + nh;
+        x1 = Math.max(0, x1); y1 = Math.max(0, y1); x2 = Math.min(vw, x2); y2 = Math.min(vh, y2);
+      }
+      x = x1; y = y1; w = x2 - x1; h = y2 - y1;
+    }
+    layoutById(state.settings.layoutId)[edit.kind] = [x, y, w, h];
+  });
+  ov.addEventListener('pointerup', () => {
+    if (drag) {
+      const r = drag.rect; drag = null;
+      if (r && r[2] > 16 && r[3] > 16) {
+        const L = layoutById(state.settings.layoutId), vw = vod.videoWidth, vh = vod.videoHeight;
+        const other = drawMode === 'cam' ? 'game' : 'cam';
+        L[other] = scaleRect(L[other], L.ref, vw, vh).map(Math.round);
+        L.ref = [vw, vh];
+        L[drawMode] = r.map(Math.round);
+        save();
+        setStatus(drawMode === 'cam' ? 'Cámara guardada en este layout.' : 'Juego guardado en este layout.', 'good');
+      }
+      setDrawMode(null);
+      return;
+    }
+    if (!edit) return;
+    const ed = edit; edit = null;
+    if (ed.click || !ed.moved) { togglePlay(); return; }
+    const L = layoutById(state.settings.layoutId);
+    L.cam = L.cam.map(Math.round); L.game = L.game.map(Math.round);
+    save();
+    setStatus(ed.kind === 'cam' ? 'Marco de la cámara ajustado.' : 'Marco del juego ajustado.', 'good');
+  });
+  ov.addEventListener('pointerleave', () => { if (!edit && !drag) hover = null; });
+  function setDrawMode(mode) {
+    drawMode = mode;
+    stage.classList.toggle('drawing', !!mode);
+    ov.style.cursor = mode ? 'crosshair' : 'pointer';
+    $('#drawCam').classList.toggle('on', mode === 'cam');
+    $('#drawGame').classList.toggle('on', mode === 'game');
+    $('#drawHint').textContent = mode ? (mode === 'cam' ? 'Arrastra un rectángulo sobre tu cámara.' : 'Arrastra un rectángulo sobre el juego.')
+      : 'Arrastra un marco para moverlo y sus cuadritos para cambiar el tamaño (Shift en una esquina mantiene la proporción).';
+  }
+  $('#drawCam').onclick = () => setDrawMode(drawMode === 'cam' ? null : 'cam');
+  $('#drawGame').onclick = () => setDrawMode(drawMode === 'game' ? null : 'game');
+
+  // ---------- layouts ----------
+  function renderLayouts() {
+    const opts = state.layouts.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+    $('#layoutSel').innerHTML = opts;
+    $('#layoutSel').value = state.settings.layoutId;
+    $('#layoutName').value = layoutById(state.settings.layoutId).name;
+  }
+  $('#layoutSel').onchange = e => {
+    state.settings.layoutId = e.target.value;
+    const m = sel(); if (m) { m.layout = e.target.value; m.done = false; }
+    save(); renderLayouts(); renderMoments();
+  };
+  $('#layoutName').onchange = e => {
+    const v = e.target.value.trim(); if (!v) return;
+    layoutById(state.settings.layoutId).name = v; save(); renderLayouts(); renderMoments();
+  };
+  $('#dupLayout').onclick = () => {
+    const L = layoutById(state.settings.layoutId);
+    const n = { ...JSON.parse(JSON.stringify(L)), id: uid(), name: L.name + ' (copia)' };
+    state.layouts.push(n); state.settings.layoutId = n.id;
+    const m = sel(); if (m) m.layout = n.id;
+    save(); renderLayouts(); renderMoments();
+    setStatus('Layout duplicado. Dibuja la cámara y el juego para ajustarlo.');
+  };
+
+  $('#allBox').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const L = layoutById(state.settings.layoutId);
+    if (b.id === 'allLayout') {
+      $('#allBox').innerHTML = `<span class="confirm">¿Poner “${esc(L.name)}” en los ${state.moments.length} momentos? <button id="allYes">Sí</button><button id="allNo" class="ghost">No</button></span>`;
+      return;
+    }
+    if (b.id === 'allYes') {
+      state.moments.forEach(m => { m.layout = L.id; if (m.filler == null) m.fillerLayout = L.id; m.done = false; });
+      save(); renderMoments(); setStatus(`Todos los momentos usan “${L.name}”.`, 'good');
+    }
+    $('#allBox').innerHTML = '<button id="allLayout" class="ghost">Usar en todos</button>';
+  });
+
+  // ---------- VOD ----------
+  let vodURL = null;
+  function openVod(file) {
+    if (!file || busy) return;
+    if (vodURL) URL.revokeObjectURL(vodURL);
+    vodURL = URL.createObjectURL(file);
+    vod.src = vodURL; fv.src = vodURL;
+    $('#vodName').textContent = file.name; $('#vodName').title = file.name;
+    setStatus('Cargando el VOD…');
+  }
+  $('#vodFile').onchange = e => openVod(e.target.files[0]);
+  $('#vodFile2').onchange = e => openVod(e.target.files[0]);
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  stage.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) openVod(f); });
+  vod.addEventListener('loadedmetadata', () => {
+    drop.hidden = true;
+    stage.style.aspectRatio = `${vod.videoWidth} / ${vod.videoHeight}`;
+    $('#vodMeta').textContent = `${vod.videoWidth}×${vod.videoHeight} · ${fmt(vod.duration)}`;
+    $('#scrub').max = vod.duration;
+    ['#playBtn', '#scrub', '#markIn', '#markOut', '#drawCam', '#drawGame', '#scanBtn'].forEach(s => $(s).disabled = false);
+    requestAnimationFrame(sizeOverlay);
+    const m = sel(); vod.currentTime = m ? m.start : Math.min(1, vod.duration);
+    const cur = $('#vodName').textContent;
+    if (state.vodFile && state.moments.length && state.vodFile !== cur) {
+      setStatus('Ojo: los momentos de la lista son de otro VOD (' + state.vodFile.slice(0, 10) + '…). Vacía la lista y busca momentos en este, o ajusta los tiempos.', 'err');
+    } else {
+      if (!state.moments.length) state.vodFile = cur;
+      setStatus('VOD listo. Elige un momento o marca uno nuevo.', 'good');
+    }
+    save(); renderMoments();
+  });
+  vod.addEventListener('error', () => setStatus('Este navegador no puede abrir ese video. Prueba con Chrome o Edge y un archivo .mp4.', 'err'));
+  window.addEventListener('resize', sizeOverlay);
+  new ResizeObserver(sizeOverlay).observe(stage);
+
+  function togglePlay() {
+    if (!hasVod() || busy) return;
+    ensureAudio();
+    if (vod.paused) { watching = false; vod.play(); } else vod.pause();
+  }
+  $('#playBtn').onclick = togglePlay;
+  vod.addEventListener('play', () => { $('#playBtn').textContent = '❚❚'; $('#playBtn').setAttribute('aria-label', 'Pausar'); });
+  vod.addEventListener('pause', () => { $('#playBtn').textContent = '▶'; $('#playBtn').setAttribute('aria-label', 'Reproducir'); fv.pause(); });
+  $('#scrub').oninput = e => { if (!busy) vod.currentTime = +e.target.value; };
+
+  function markIn() {
+    if (!hasVod()) return;
+    const t = Math.round(vod.currentTime), m = sel();
+    if (m) { m.start = t; if (m.end <= t) m.end = t + 30; }
+    else { const n = newMoment(t, t + 30); selId = n.id; }
+    save(); renderMoments();
+  }
+  function markOut() {
+    if (!hasVod()) return;
+    const t = Math.round(vod.currentTime), m = sel();
+    if (!m) { setStatus('Primero marca el inicio o elige un momento.'); return; }
+    if (t <= m.start) { setStatus('El fin tiene que ir después del inicio.', 'err'); return; }
+    m.end = t; save(); renderMoments();
+  }
+  $('#markIn').onclick = markIn; $('#markOut').onclick = markOut;
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea, button')) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.key === 'i' || e.key === 'I') markIn();
+    else if (e.key === 'o' || e.key === 'O') markOut();
+  });
+
+  // ---------- momentos ----------
+  function newMoment(start, end) {
+    const m = { id: uid(), start, end, text: '', layout: state.settings.layoutId, filler: null, fillerLayout: state.settings.layoutId, done: false };
+    state.moments.push(m); return m;
+  }
+  function renderMoments() {
+    const ms = state.moments;
+    $('#mCount').textContent = ms.length;
+    $('#sourceNote').textContent = state.source || '';
+    $('#sourceNote').hidden = !state.source;
+    if (!ms.length) {
+      $('#mBody').innerHTML = `<tr><td colspan="8" class="empty">No hay momentos. Abre un VOD y usa “Buscar momentos por audio”, o marca uno con I y O.</td></tr>`;
+      updateButtons(); return;
+    }
+    const lopts = id => state.layouts.map(l => `<option value="${l.id}"${l.id === id ? ' selected' : ''}>${esc(l.name)}</option>`).join('');
+    $('#mBody').innerHTML = ms.map((m, i) => {
+      const d = m.end - m.start;
+      return `<tr data-id="${m.id}" class="${m.id === selId ? 'sel' : ''}">
+        <td class="num">${pad(i + 1)}</td>
+        <td><input type="text" class="time" data-f="start" value="${fmt(m.start)}" aria-label="Inicio"></td>
+        <td><input type="text" class="time" data-f="end" value="${fmt(m.end)}" aria-label="Fin"></td>
+        <td class="dur${d < 30 || d > 90 ? ' warn' : ''}">${Math.round(d)} s</td>
+        <td><input type="text" class="text" data-f="text" value="${esc(m.text)}" placeholder="Sin texto" aria-label="Texto"></td>
+        <td><select data-f="layout" aria-label="Layout">${lopts(m.layout)}</select></td>
+        <td><div class="row" style="flex-wrap:nowrap">
+          <input type="text" class="time" data-f="filler" value="${m.filler != null ? fmt(m.filler) : ''}" placeholder="—" aria-label="Gameplay de relleno desde">
+          ${m.filler != null ? `<select data-f="fillerLayout" aria-label="Layout del relleno">${lopts(m.fillerLayout)}</select>` : ''}
+        </div></td>
+        <td><div class="acts">
+          ${m.done ? '<span class="pill done" title="Ya exportado">listo</span>' : ''}
+          <button data-a="watch" ${hasVod() ? '' : 'disabled'} aria-label="Ver momento ${i + 1}">▶</button>
+          <button data-a="export" ${hasVod() ? '' : 'disabled'}>Exportar</button>
+          <button data-a="del" class="ghost danger" aria-label="Borrar momento ${i + 1}">✕</button>
+        </div></td></tr>`;
+    }).join('');
+    updateButtons();
+  }
+  const body = $('#mBody');
+  body.addEventListener('change', e => {
+    const tr = e.target.closest('tr'), f = e.target.dataset.f; if (!tr || !f) return;
+    const m = state.moments.find(x => x.id === tr.dataset.id); if (!m) return;
+    if (f === 'start' || f === 'end') {
+      const t = parseTime(e.target.value);
+      if (t == null || isNaN(t)) { setStatus('Tiempo inválido. Usa 1:23:10, 12:05 o segundos.', 'err'); renderMoments(); return; }
+      m[f] = t;
+      if (m.end <= m.start) { setStatus('El fin tiene que ir después del inicio.', 'err'); }
+    } else if (f === 'filler') {
+      const t = parseTime(e.target.value);
+      if (t != null && isNaN(t)) { setStatus('Tiempo inválido para el relleno.', 'err'); renderMoments(); return; }
+      m.filler = t; if (t != null && !m.fillerLayout) m.fillerLayout = m.layout;
+    } else m[f] = e.target.value;
+    if (f === 'layout' && m.id === selId) { state.settings.layoutId = m.layout; renderLayouts(); }
+    m.done = false;
+    save(); renderMoments();
+  });
+  body.addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    const id = tr.dataset.id, a = e.target.closest('button')?.dataset.a;
+    if (a === 'del') {
+      state.moments = state.moments.filter(m => m.id !== id);
+      if (selId === id) selId = null; save(); renderMoments(); return;
+    }
+    if (busy) return;
+    if (selId !== id) {
+      if (e.target.closest('input, select')) { // no re-dibujar la tabla mientras escribes
+        selId = id; syncLayoutToSel();
+        body.querySelectorAll('tr[data-id]').forEach(r => r.classList.toggle('sel', r.dataset.id === id));
+        const m = sel(); if (m && hasVod()) { vod.pause(); vod.currentTime = m.start; if (m.filler != null) fv.currentTime = m.filler; }
+        updateButtons();
+      } else select(id);
+    }
+    if (a === 'watch') watchSelected();
+    if (a === 'export') exportList([sel()]);
+  });
+  function syncLayoutToSel() {
+    const m = sel(); if (!m) return;
+    if (state.settings.layoutId !== m.layout) { state.settings.layoutId = m.layout; renderLayouts(); }
+  }
+  function select(id) {
+    selId = id; syncLayoutToSel(); renderMoments();
+    const m = sel();
+    if (m && hasVod()) { vod.pause(); vod.currentTime = m.start; if (m.filler != null) fv.currentTime = m.filler; }
+  }
+  function watchSelected() {
+    const m = sel(); if (!m || !hasVod()) return;
+    ensureAudio(); watching = true;
+    vod.currentTime = m.start;
+    if (m.filler != null) fv.currentTime = m.filler;
+    vod.play();
+  }
+  $('#watchSel').onclick = watchSelected;
+  $('#addBtn').onclick = () => {
+    const t = hasVod() ? Math.round(vod.currentTime) : 0;
+    const m = newMoment(t, t + 30); selId = m.id; save(); renderMoments();
+  };
+  // vaciar con confirmación en la página
+  $('#clearBox').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'clearBtn') {
+      $('#clearBox').innerHTML = `<span class="confirm">¿Borrar los ${state.moments.length} momentos? <button id="clearYes" class="danger">Sí, vaciar</button><button id="clearNo" class="ghost">No</button></span>`;
+    } else if (b.id === 'clearYes') {
+      state.moments = []; state.source = ''; state.vodFile = hasVod() ? $('#vodName').textContent : ''; selId = null; save(); renderMoments(); resetClear();
+    } else if (b.id === 'clearNo') resetClear();
+  });
+  function resetClear() { $('#clearBox').innerHTML = '<button id="clearBtn" class="ghost danger">Vaciar lista</button>'; }
+
+  function updateButtons() {
+    const m = sel();
+    $('#exportOne').disabled = busy || !m || !hasVod();
+    $('#watchSel').disabled = busy || !m || !hasVod();
+    $('#exportAll').disabled = busy || !hasVod() || !state.moments.length;
+    $('#scanBtn').disabled = busy || !hasVod();
+    $('#selInfo').innerHTML = m
+      ? `Momento <b>${pad(state.moments.indexOf(m) + 1)}</b> · <span class="mono">${fmt(m.start)} → ${fmt(m.end)}</span> · ${Math.round(m.end - m.start)} s` +
+        (m.filler != null ? ` · <span class="pill fill">relleno ${fmt(m.filler)}</span><br>Abajo va gameplay de ${fmt(m.filler)} con el marco de juego de “${esc(layoutById(m.fillerLayout || m.layout).name)}”.` : '')
+      : 'Elige un momento de la lista para verlo aquí.';
+  }
+
+  // ---------- bucle de vista previa ----------
+  function loop() {
+    const m = sel() || { text: '', layout: state.settings.layoutId, filler: null };
+    if (!busy) {
+      const useF = m.filler != null && hasVod();
+      if (useF && sel()) {
+        const want = m.filler + (vod.currentTime - m.start);
+        if (want >= 0 && Math.abs(fv.currentTime - want) > 0.35 && !fv.seeking) fv.currentTime = want;
+        if (!vod.paused && fv.paused) fv.play().catch(() => {});
+      }
+      pctx.clearRect(0, 0, pv.width, pv.height);
+      compose(pctx, pv.width, pv.height, m, useF && sel());
+      if (watching && sel() && vod.currentTime >= sel().end) { vod.pause(); watching = false; }
+    }
+    if (hasVod()) {
+      $('#clock').innerHTML = `<b>${fmt(vod.currentTime)}</b> / ${fmt(vod.duration)}`;
+      if (document.activeElement !== $('#scrub')) $('#scrub').value = vod.currentTime;
+    }
+    drawOverlay();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- exportar ----------
+  function pickMime() {
+    const list = [
+      ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'mp4'], ['video/mp4;codecs=avc1,mp4a.40.2', 'mp4'],
+      ['video/mp4;codecs=avc1.640028,opus', 'mp4'], ['video/mp4;codecs=avc1,opus', 'mp4'], ['video/mp4', 'mp4'],
+      ['video/webm;codecs=vp9,opus', 'webm'], ['video/webm;codecs=vp8,opus', 'webm'], ['video/webm', 'webm'],
+    ];
+    for (const [m, ext] of list) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return { mime: m, ext };
+    return { mime: '', ext: 'webm' };
+  }
+  async function renderMoment(m, onProgress) {
+    ensureAudio();
+    const useF = m.filler != null;
+    const c = document.createElement('canvas'); c.width = OUT_W; c.height = OUT_H;
+    const x = c.getContext('2d');
+    const vstream = c.captureStream(30);
+    const stream = new MediaStream([...vstream.getVideoTracks(), ...recDest.stream.getAudioTracks()]);
+    const { mime, ext } = pickMime();
+    vod.pause(); fv.pause(); vod.playbackRate = 1; watching = false;
+    await seek(vod, m.start);
+    if (useF) await seek(fv, m.filler);
+    compose(x, OUT_W, OUT_H, m, useF);
+    const chunks = [];
+    const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 8e6, audioBitsPerSecond: 160000 } : {});
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => rec.onstop = r);
+    monitor.gain.value = state.settings.listen ? 1 : 0;
+    rec.start(1000);
+    await vod.play();
+    if (useF) fv.play().catch(() => {});
+    await new Promise(res => {
+      const tick = () => {
+        if (cancelFlag) return res();
+        compose(x, OUT_W, OUT_H, m, useF);
+        pctx.drawImage(c, 0, 0, pv.width, pv.height);
+        onProgress(Math.min(1, (vod.currentTime - m.start) / (m.end - m.start)));
+        if (vod.currentTime >= m.end || vod.ended) return res();
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    vod.pause(); fv.pause();
+    rec.stop(); await stopped;
+    vstream.getTracks().forEach(t => t.stop());
+    monitor.gain.value = 1;
+    return { blob: new Blob(chunks, { type: (mime || 'video/webm').split(';')[0] }), ext };
+  }
+  let downloads;
+  const downloadsReady = (async () => { try { downloads = await window.claude?.use?.('downloads'); } catch (e) { downloads = null; } })();
+  async function offer(filename, blob) {
+    await downloadsReady;
+    if (downloads) {
+      try { await downloads.save({ filename, data: blob }); return 'saved'; }
+      catch (e) { return e && e.code === 'declined' ? 'declined' : 'error'; }
+    }
+    try { // abierto como archivo local: descarga normal
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); return 'saved';
+    } catch (e) { return 'error'; }
+  }
+  async function exportList(list) {
+    list = list.filter(Boolean);
+    if (!list.length || !hasVod() || busy) return;
+    const bad = list.find(m => !(m.end > m.start));
+    if (bad) { setStatus(`El momento ${pad(state.moments.indexOf(bad) + 1)} tiene el fin antes del inicio.`, 'err'); return; }
+    busy = true; cancelFlag = false; updateButtons();
+    $('#cancelExport').hidden = false;
+    const bar = $('#bar');
+    let ok = 0;
+    for (let k = 0; k < list.length; k++) {
+      const m = list[k], n = state.moments.indexOf(m) + 1;
+      selId = m.id; renderMoments(); updateButtons();
+      setStatus(`Grabando clip ${pad(n)} (${k + 1} de ${list.length})…`);
+      let out;
+      try { out = await renderMoment(m, p => bar.style.width = (p * 100).toFixed(1) + '%'); }
+      catch (e) { setStatus('No se pudo grabar el clip: ' + (e.message || e), 'err'); break; }
+      if (cancelFlag) break;
+      const name = `${pad(n)}_${safeName(m.text)}.${out.ext}`;
+      exported.unshift({ name, blob: out.blob, url: URL.createObjectURL(out.blob), dur: m.end - m.start, mine: true });
+      renderGallery();
+      setStatus(`Clip ${pad(n)} listo. Confirma la descarga…`);
+      const r = await offer(name, out.blob);
+      if (r === 'saved') { ok++; m.done = true; save(); }
+      else if (r === 'declined') setStatus(`No guardaste ${name}. Sigue en la Galería por si lo quieres después.`);
+      else setStatus(`No pude ofrecer la descarga de ${name}. Está en la Galería.`, 'err');
+    }
+    busy = false; bar.style.width = '0'; $('#cancelExport').hidden = true; renderMoments(); updateButtons();
+    if (cancelFlag) setStatus('Exportación cancelada.');
+    if (!cancelFlag && ok) setStatus(ok === 1 ? '1 clip guardado.' : `${ok} clips guardados.`, 'good');
+    if (!cancelFlag && pickMime().ext === 'webm') setStatus('Ojo: tu navegador graba en .webm. Si TikTok no lo acepta, usa Chrome o Edge actualizados para obtener .mp4.', 'err');
+  }
+  $('#exportOne').onclick = () => exportList([sel()]);
+  $('#exportAll').onclick = () => exportList([...state.moments]);
+  $('#cancelExport').onclick = () => { cancelFlag = true; };
+
+  // ---------- galería ----------
+  function renderGallery() {
+    const items = [...exported, ...opened];
+    $('#gCount').textContent = items.length || '';
+    $('#gal').innerHTML = items.length ? items.map((it, i) => `
+      <div class="card">
+        <video src="${it.url}" controls preload="metadata" playsinline></video>
+        <div class="meta">
+          <span class="name">${esc(it.name)}</span>
+          <span class="sub">${(it.blob.size / 1048576).toFixed(1)} MB${it.mine ? ' · exportado aquí' : ''}</span>
+          ${it.mine ? `<button data-g="${i}">Guardar otra vez</button>` : ''}
+        </div>
+      </div>`).join('')
+      : '<p class="empty" style="grid-column:1/-1">Aquí verás los clips que exportes, o los que abras de tu carpeta clips.</p>';
+  }
+  $('#gal').addEventListener('click', async e => {
+    const i = e.target.dataset.g; if (i == null) return;
+    const it = [...exported, ...opened][+i];
+    const r = await offer(it.name, it.blob);
+    if (r === 'saved') setStatus(`${it.name} guardado.`, 'good');
+  });
+  $('#galIn').onchange = e => {
+    for (const f of e.target.files) opened.push({ name: f.name, blob: f, url: URL.createObjectURL(f), mine: false });
+    renderGallery();
+  };
+  function showTab(which) {
+    const g = which === 'gallery';
+    $('#tabMoments').setAttribute('aria-selected', !g); $('#tabGallery').setAttribute('aria-selected', g);
+    $('#momentsView').hidden = g; $('#galleryView').hidden = !g;
+  }
+  $('#tabMoments').onclick = () => showTab('moments');
+  $('#tabGallery').onclick = () => showTab('gallery');
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(r => r.some(c => c.trim()));
+  }
+  $('#csvIn').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    const rows = parseCSV((await f.text()).replace(/^﻿/, ''));
+    const head = rows.shift().map(h => h.trim().toLowerCase());
+    const col = n => head.indexOf(n);
+    if (col('start') < 0 || col('end') < 0) { setStatus('El CSV necesita las columnas start,end,text.', 'err'); return; }
+    let added = 0;
+    for (const r of rows) {
+      const s = parseTime(r[col('start')]), en = parseTime(r[col('end')]);
+      if (s == null || isNaN(s) || en == null || isNaN(en)) continue;
+      const m = newMoment(s, en);
+      if (col('text') >= 0) m.text = (r[col('text')] || '').trim();
+      if (col('layout') >= 0 && state.layouts.some(l => l.id === r[col('layout')])) m.layout = m.fillerLayout = r[col('layout')];
+      if (col('filler') >= 0) { const t = parseTime(r[col('filler')]); if (t != null && !isNaN(t)) m.filler = t; }
+      added++;
+    }
+    state.source = `Importado de ${f.name}.`;
+    if (hasVod()) state.vodFile = $('#vodName').textContent;
+    save(); renderMoments(); e.target.value = '';
+    setStatus(`${added} momentos importados de ${f.name}.`, 'good');
+  };
+  $('#csvOut').onclick = async () => {
+    const q = s => /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    const lines = ['start,end,text,layout,filler', ...state.moments.map(m =>
+      [fmt(m.start), fmt(m.end), q(m.text || ''), m.layout, m.filler != null ? fmt(m.filler) : ''].join(','))];
+    const r = await offer('clips.csv', '﻿' + lines.join('\n') + '\n');
+    if (r === 'saved') setStatus('clips.csv guardado. Sirve con: python make_clip.py batch VOD.mp4 clips.csv', 'good');
+  };
+
+  // ---------- buscar momentos (misma lógica que make_clip.py) ----------
+  const smooth = (x, k) => x.map((_, i) => { let s = 0; for (let j = 0; j < k; j++) s += x[Math.min(x.length - 1, Math.max(0, i - Math.floor(k / 2) + j))]; return s / k; });
+  function rollingMedian(x, win) {
+    const n = x.length; win = Math.max(1, Math.min(win, n)); const half = Math.floor(win / 2);
+    return x.map((_, i) => {
+      const w = []; for (let j = 0; j < win; j++) w.push(x[Math.min(n - 1, Math.max(0, i - half + j))]);
+      w.sort((a, b) => a - b); return win % 2 ? w[(win - 1) / 2] : (w[win / 2 - 1] + w[win / 2]) / 2;
+    });
+  }
+  function percentile(x, p) {
+    const s = [...x].sort((a, b) => a - b), k = (s.length - 1) * p / 100, f = Math.floor(k), c = Math.min(s.length - 1, f + 1);
+    return s[f] + (s[c] - s[f]) * (k - f);
+  }
+  function normalize(x) { let top = percentile(x, 99.5); if (top <= 0) top = Math.max(...x) > 0 ? Math.max(...x) : 1; return x.map(v => Math.min(1, Math.max(0, v / top))); }
+  function pickPeaks(score, topN, minGap) {
+    const order = score.map((v, i) => i).sort((a, b) => score[b] - score[a]);
+    const floor = 0.15 * Math.max(...score), chosen = [];
+    for (const i of order) {
+      if (score[i] <= Math.max(0, floor) || chosen.length >= topN) break;
+      if (chosen.every(c => Math.abs(i - c) >= minGap)) chosen.push(i);
+    }
+    return chosen.sort((a, b) => a - b);
+  }
+  function buildWindow(score, peak, total, minL = 30, maxL = 90, lead = 10, tail = 7, gap = 6) {
+    const act = smooth(score, 5), n = act.length, thr = Math.max(0.25 * act[peak], 0.05);
+    let s = peak, quiet = 0;
+    while (s > 0 && quiet < gap) { s--; quiet = act[s] >= thr ? 0 : quiet + 1; }
+    s += quiet;
+    let e = peak; quiet = 0;
+    while (e < n - 1 && quiet < gap) { e++; quiet = act[e] >= thr ? 0 : quiet + 1; }
+    e -= quiet;
+    let start = s - lead, end = e + tail, len = end - start;
+    if (len < minL) { const ex = minL - len; start -= ex * 0.6; end += ex * 0.4; }
+    else if (len > maxL) { const before = Math.min(peak - start, maxL * 0.65); start = peak - before; end = start + maxL; }
+    if (start < 0) { end -= start; start = 0; }
+    if (end > total) { start = Math.max(0, start - (end - total)); end = total; }
+    return [start, end, peak];
+  }
+  function resolveOverlaps(ws, score, minL = 30, maxL = 90) {
+    ws.sort((a, b) => a[0] - b[0]); const out = [];
+    for (const w of ws) {
+      if (!out.length || w[0] >= out[out.length - 1][1]) { out.push(w); continue; }
+      const prev = out[out.length - 1], best = score[prev[2]] >= score[w[2]] ? prev[2] : w[2];
+      if (Math.max(prev[1], w[1]) - prev[0] <= maxL) { out[out.length - 1] = [prev[0], Math.max(prev[1], w[1]), best]; continue; }
+      const cut = (prev[2] + w[2]) / 2, a = [prev[0], Math.min(prev[1], cut), prev[2]], b = [Math.max(w[0], cut), w[1], w[2]];
+      if (a[1] - a[0] < minL || b[1] - b[0] < minL) out[out.length - 1] = score[prev[2]] >= score[w[2]] ? prev : w;
+      else { out[out.length - 1] = a; out.push(b); }
+    }
+    return out;
+  }
+  async function scan() {
+    if (!hasVod() || busy) return;
+    ensureAudio(); busy = true; cancelFlag = false; watching = false; updateButtons();
+    const box = $('#scanBox'), bar = $('#scanBar');
+    box.hidden = false; $('#scanResult').hidden = true; $('#scanCancel').hidden = false;
+    $('#scanTitle').textContent = 'Escuchando el VOD a 4×…';
+    const dur = vod.duration, n = Math.ceil(dur);
+    const sum = new Float64Array(n), cnt = new Uint32Array(n), buf = new Float32Array(analyser.fftSize);
+    monitor.gain.value = 0;
+    await seek(vod, 0);
+    vod.playbackRate = 4; vod.preservesPitch = true;
+    try { await vod.play(); } catch (e) {}
+    await new Promise(res => {
+      const iv = setInterval(() => {
+        if (cancelFlag || vod.ended || vod.currentTime >= dur - 0.05) { clearInterval(iv); return res(); }
+        if (vod.paused) vod.play().catch(() => {});
+        analyser.getFloatTimeDomainData(buf);
+        let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+        const sec = Math.min(n - 1, Math.floor(vod.currentTime));
+        sum[sec] += s / buf.length; cnt[sec]++;
+        bar.style.width = (vod.currentTime / dur * 100).toFixed(1) + '%';
+        $('#scanTitle').textContent = `Escuchando el VOD a 4×… ${fmt(vod.currentTime)} / ${fmt(dur)}`;
+      }, 40);
+    });
+    vod.pause(); vod.playbackRate = 1; monitor.gain.value = 1;
+    busy = false; updateButtons();
+    if (cancelFlag) { box.hidden = true; setStatus('Búsqueda cancelada.'); return; }
+    let last = -90; const db = [];
+    for (let i = 0; i < n; i++) { if (cnt[i]) last = Math.max(-90, 10 * Math.log10(sum[i] / cnt[i] + 1e-12)); db.push(last); }
+    const sm = smooth(db, 3), med = rollingMedian(db, 60);
+    const score = normalize(sm.map((v, i) => Math.max(0, v - med[i])));
+    const peaks = pickPeaks(score, 10, 60);
+    scanResult = resolveOverlaps(peaks.map(p => buildWindow(score, p, dur)), score);
+    bar.style.width = '100%';
+    $('#scanCancel').hidden = true;
+    if (!scanResult.length) { $('#scanTitle').textContent = 'No encontré momentos destacados en el audio.'; return; }
+    $('#scanTitle').textContent = `Encontré ${scanResult.length} momentos (30 s a 1:30, terminan 7 s después de que baja el volumen).`;
+    $('#scanHint').textContent = scanResult.map(w => `${fmt(w[0])}–${fmt(w[1])}`).join(' · ');
+    $('#scanResult').hidden = false;
+  }
+  function applyScan(replace) {
+    if (!scanResult) return;
+    if (replace) { state.moments = []; selId = null; }
+    scanResult.forEach(w => newMoment(Math.round(w[0]), Math.round(w[1])));
+    state.moments.sort((a, b) => a.start - b.start);
+    state.source = `Momentos encontrados por audio en ${$('#vodName').textContent}. Revisa cuáles no tienen gameplay y ponles relleno.`;
+    state.vodFile = $('#vodName').textContent;
+    scanResult = null; $('#scanBox').hidden = true; save(); renderMoments();
+  }
+  $('#scanBtn').onclick = scan;
+  $('#scanCancel').onclick = () => { cancelFlag = true; };
+  $('#scanReplace').onclick = () => applyScan(true);
+  $('#scanAppend').onclick = () => applyScan(false);
+  $('#scanDiscard').onclick = () => { scanResult = null; $('#scanBox').hidden = true; };
+
+  // ---------- ajustes ----------
+  $('#wmOn').checked = state.settings.wm; $('#wmText').value = state.settings.wmText; $('#listenOn').checked = state.settings.listen;
+  $('#wmOn').onchange = e => { state.settings.wm = e.target.checked; save(); };
+  $('#wmText').oninput = e => { state.settings.wmText = e.target.value; save(); };
+  $('#listenOn').onchange = e => { state.settings.listen = e.target.checked; save(); };
+
+  renderLayouts(); renderMoments(); renderGallery(); sizeOverlay();
+  if (state.moments.length) { selId = state.moments[state.moments.length - 1].id; syncLayoutToSel(); renderMoments(); }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script>
+// Clips Timi: si una captura todavía no existe, se muestra un recuadro con su ruta
+document.querySelectorAll('.ct-shot img').forEach(img => {
+  const missing = () => img.closest('.ct-shot').classList.add('is-missing');
+  img.addEventListener('error', missing);
+  if (img.complete && img.naturalWidth === 0) missing();
+});
+</script>
+</body></html>

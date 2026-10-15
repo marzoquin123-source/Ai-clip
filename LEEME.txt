@@ -1,0 +1,4 @@
+Pon aquí las capturas de la app con estos nombres exactos:
+  clips-timi-app.png    (pantalla principal)
+  clips-timi-marca.png  (editor de marca de agua)
+Mientras no estén, la página muestra un recuadro con el nombre de cada imagen.
